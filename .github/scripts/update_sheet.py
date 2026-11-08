@@ -138,21 +138,27 @@ def main():
     headers = [h.strip() for h in ws.row_values(1)]
     weeks_col = [w.strip() for w in ws.col_values(1)]
 
-    # 3. Tìm cột của học viên trong Row 1
-    col_lt_name = f"{student_username} (LT)"
-    col_th_name = f"{student_username} (TH)"
+    # 3. Tìm cột của học viên trong Row 1 (xử lý linh hoạt có hoặc không có dấu cách)
+    def clean_h(val):
+        return str(val).replace(" ", "").lower()
+
+    target_clean_lt = clean_h(f"{student_username}(LT)")
+    target_clean_th = clean_h(f"{student_username}(TH)")
 
     col_lt_idx = None
     col_th_idx = None
 
     for idx, h in enumerate(headers, start=1):
-        if h.lower() == col_lt_name.lower():
+        h_clean = clean_h(h)
+        if h_clean == target_clean_lt:
             col_lt_idx = idx
-        elif h.lower() == col_th_name.lower():
+        elif h_clean == target_clean_th:
             col_th_idx = idx
 
     # Nếu chưa có cột cho học viên này, tự động thêm 2 cột vào cuối Row 1
     if not col_lt_idx or not col_th_idx:
+        col_lt_name = f"{student_username} (LT)"
+        col_th_name = f"{student_username} (TH)"
         new_col_start = len(headers) + 1
         ws.update_cell(1, new_col_start, col_lt_name)
         ws.update_cell(1, new_col_start + 1, col_th_name)
