@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Kho bài tập thực hành Backend Node.js - Tự động chấm điểm",
   "scripts": {
-    "test": "node --test assignments/**/index.test.js",
-    "w1": "node --test assignments/week-01/index.test.js",
-    "w2": "node --test assignments/week-02/index.test.js"
+    "test": "node --test assignments/**/sample.test.js",
+    "w1": "node --test assignments/week-01/sample.test.js",
+    "w2": "node --test assignments/week-02/sample.test.js"
   },
   "keywords": [],
   "author": "",

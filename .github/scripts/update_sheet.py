@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
 Script chấm điểm tự động đa bài tập (Lý thuyết + Thực hành)
-Hỗ trợ cấu trúc phẳng:
-  assignments/week-XX/
-  ├── README.md
-  ├── quiz.json
-  ├── index.js
-  └── index.test.js
+Hỗ trợ:
+- Bảo mật đáp án lý thuyết qua GitHub Secret (ANSWER_KEYS)
+- Bảo mật bộ test thực hành ẩn qua GitHub Secret (HIDDEN_TESTS_B64)
+- Chống gian lận: sinh viên không thể xem file test hoặc đáp án trong repo
 """
 
 import os
 import sys
 import json
 import glob
+import base64
+import tempfile
 import subprocess
 from datetime import datetime, timezone, timedelta
 
@@ -21,22 +21,38 @@ def get_vietnam_time():
     return datetime.now(tz_vn).strftime("%d/%m/%Y %H:%M:%S")
 
 def grade_theory(week_folder, week_name):
-    """Chấm điểm bài tập lý thuyết dựa vào file quiz.json và key đáp án"""
-    # Hỗ trợ cả quiz.json mới và tra-loi.json cũ
+    """Chấm điểm bài tập lý thuyết dựa vào file quiz.json và key bí mật"""
     answer_file = os.path.join(week_folder, "quiz.json")
     if not os.path.exists(answer_file):
-        answer_file = os.path.join(week_folder, "ly-thuyet", "tra-loi.json")
+        answer_file = os.path.join(week_folder, "tra-loi.json")
 
-    key_file = os.path.join(".github", "keys", f"{week_name}.json")
+    # Ưu tiên lấy đáp án từ GitHub Secret ANSWER_KEYS
+    secret_keys_str = os.environ.get("ANSWER_KEYS")
+    correct_keys = None
 
-    if not os.path.exists(answer_file) or not os.path.exists(key_file):
+    if secret_keys_str:
+        try:
+            all_secret_keys = json.loads(secret_keys_str)
+            correct_keys = all_secret_keys.get(week_name)
+        except Exception as e:
+            print(f"[WARN] Lỗi giải mã ANSWER_KEYS secret: {e}")
+
+    # Fallback nếu không có secret
+    if not correct_keys:
+        key_file = os.path.join(".github", "keys", f"{week_name}.json")
+        if os.path.exists(key_file):
+            try:
+                with open(key_file, "r", encoding="utf-8") as f:
+                    correct_keys = json.load(f)
+            except Exception:
+                pass
+
+    if not os.path.exists(answer_file) or not correct_keys:
         return None, "Chưa có đề hoặc đáp án"
 
     try:
         with open(answer_file, "r", encoding="utf-8") as f:
             student_answers = json.load(f)
-        with open(key_file, "r", encoding="utf-8") as f:
-            correct_keys = json.load(f)
     except Exception as e:
         return 0, f"Lỗi đọc JSON: {e}"
 
@@ -59,14 +75,23 @@ def grade_theory(week_folder, week_name):
     score = round((correct_count / total_questions) * 100)
     return score, f"{correct_count}/{total_questions} câu đúng ({score}/100)"
 
-def grade_practice(week_folder):
-    """Chấm điểm bài tập thực hành bằng node --test"""
-    # Hỗ trợ index.test.js phẳng hoặc thư mục test/ cũ
-    test_file = os.path.join(week_folder, "index.test.js")
-    if os.path.exists(test_file):
-        test_files = [test_file]
-    else:
-        test_files = glob.glob(os.path.join(week_folder, "**", "*.test.js"), recursive=True)
+def grade_practice(week_name, hidden_tests_dir=None):
+    """Chấm điểm bài tập thực hành bằng bộ test ẩn (hoặc test cục bộ)"""
+    test_files = []
+
+    # 1. Ưu tiên dùng bộ test ẩn được giải mã từ Secret
+    if hidden_tests_dir:
+        hidden_test = os.path.join(hidden_tests_dir, week_name, "eval.test.js")
+        if os.path.exists(hidden_test):
+            test_files = [hidden_test]
+
+    # 2. Fallback nếu không có test ẩn
+    if not test_files:
+        test_file = os.path.join("assignments", week_name, "index.test.js")
+        if os.path.exists(test_file):
+            test_files = [test_file]
+        else:
+            test_files = glob.glob(os.path.join("assignments", week_name, "**", "*.test.js"), recursive=True)
 
     if not test_files:
         return None, "Không có file test"
@@ -75,9 +100,9 @@ def grade_practice(week_folder):
     res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
     if res.returncode == 0:
-        return 100, "Đạt 100% (Pass toàn bộ test)"
+        return 100, "Đạt 100% (Pass toàn bộ hidden tests)"
     else:
-        return 0, "Chưa đạt (Có test bị lỗi)"
+        return 0, "Chưa đạt (Không vượt qua hidden test)"
 
 def main():
     sa_key_str = os.environ.get("GCP_SA_KEY")
@@ -97,6 +122,22 @@ def main():
     sheet_name = os.environ.get("SHEET_NAME", "bang diem")
     submit_time = get_vietnam_time()
 
+    # Giải nén bộ test ẩn từ GitHub Secret (nếu có)
+    hidden_tests_b64 = os.environ.get("HIDDEN_TESTS_B64")
+    hidden_temp_dir = None
+    if hidden_tests_b64:
+        try:
+            hidden_temp_dir = tempfile.mkdtemp(prefix="eval_tests_")
+            archive_data = base64.b64decode(hidden_tests_b64.strip())
+            archive_path = os.path.join(hidden_temp_dir, "tests.tar.gz")
+            with open(archive_path, "wb") as f:
+                f.write(archive_data)
+            subprocess.run(["tar", "-xzf", archive_path, "-C", hidden_temp_dir], check=True)
+            print("[INFO] Đã giải mã thành công bộ test bí mật (Hidden Tests) từ GitHub Secret.")
+        except Exception as e:
+            print(f"[WARN] Không thể giải nén HIDDEN_TESTS_B64: {e}")
+            hidden_temp_dir = None
+
     try:
         import gspread
         from google.oauth2.service_account import Credentials
@@ -104,7 +145,6 @@ def main():
         print("[ERROR] gspread or google-auth not installed.", file=sys.stderr)
         sys.exit(1)
 
-    # 1. Quét toàn bộ bài tập trong assignments/week-*
     week_folders = sorted(glob.glob("assignments/week-*"))
     if not week_folders:
         print("Không tìm thấy bài tập nào trong assignments/week-*")
@@ -122,7 +162,7 @@ def main():
             continue
 
         score_lt, detail_lt = grade_theory(wf, week_name)
-        score_th, detail_th = grade_practice(wf)
+        score_th, detail_th = grade_practice(week_name, hidden_temp_dir)
 
         results[week_num] = {
             "week_name": week_name,
@@ -140,7 +180,12 @@ def main():
         report_lines.append(f"- 📚 **Lý thuyết**: `{score_lt}` ({detail_lt})")
         report_lines.append(f"- 💻 **Thực hành**: `{score_th}` ({detail_th})")
 
-    # 2. Kết nối Google Sheet
+    # Dọn dẹp thư mục tạm của test ẩn
+    if hidden_temp_dir and os.path.exists(hidden_temp_dir):
+        import shutil
+        shutil.rmtree(hidden_temp_dir, ignore_errors=True)
+
+    # Kết nối Google Sheet
     print("\nConnecting to Google Sheet...")
     scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     creds = Credentials.from_service_account_info(sa_credentials, scopes=scopes)
@@ -151,7 +196,6 @@ def main():
     headers = [h.strip() for h in ws.row_values(1)]
     weeks_col = [w.strip() for w in ws.col_values(1)]
 
-    # 3. Tìm cột của học viên trong Row 1 (xử lý linh hoạt có hoặc không có dấu cách)
     def clean_h(val):
         return str(val).replace(" ", "").lower()
 
@@ -168,7 +212,6 @@ def main():
         elif h_clean == target_clean_th:
             col_th_idx = idx
 
-    # Nếu chưa có cột cho học viên này, tự động thêm 2 cột vào cuối Row 1
     if not col_lt_idx or not col_th_idx:
         col_lt_name = f"{student_username} (LT)"
         col_th_name = f"{student_username} (TH)"
@@ -180,7 +223,6 @@ def main():
         headers.extend([col_lt_name, col_th_name])
         print(f"Đã tự động thêm cột cho học viên: Cột {col_lt_idx} ({col_lt_name}), Cột {col_th_idx} ({col_th_name})")
 
-    # 4. Tìm dòng của từng tuần và cập nhật điểm
     updates = []
     for week_num, res in results.items():
         week_tag = f"Tuần {week_num:02d}"
@@ -191,7 +233,6 @@ def main():
                 break
 
         if not target_row:
-            print(f"[WARN] Không tìm thấy dòng cho '{week_tag}' trong cột A.")
             continue
 
         if res["score_lt"] is not None:
@@ -210,7 +251,6 @@ def main():
         ws.batch_update(updates)
         print(f"Đã cập nhật thành công {len(updates)} ô điểm số lên Google Sheet!")
 
-    # 5. Xuất summary markdown cho PR comment
     summary_md = f"### 🤖 Kết quả chấm bài tự động - @{student_username}\n\n" + \
                  "\n".join(report_lines) + \
                  f"\n\n- 🕒 **Thời gian cập nhật**: {submit_time}\n" + \
