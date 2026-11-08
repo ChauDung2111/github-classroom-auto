@@ -1,52 +1,62 @@
-# 🚀 Lộ Trình Backend Node.js - Hệ Thống Chấm Điểm Tự Động
+# 🚀 Lộ Trình Backend Node.js - Hệ Thống Chấm Bài Tự Động
 
 Chào mừng các bạn đến với kho lưu trữ bài tập thực hành theo lộ trình Backend Node.js! Hệ thống được tích hợp **chấm điểm tự động và cập nhật trực tiếp lên Google Sheet theo từng tuần**.
 
 ---
 
-## 📂 Cấu trúc bài tập
+## 📂 Cấu trúc thư mục bài tập (Tinh gọn & Dễ dùng)
+
+Mỗi tuần chỉ là **1 thư mục duy nhất**, bên trong chứa đầy đủ đề bài và code làm bài:
 
 ```text
 assignments/
 ├── week-01/
-│   ├── ly-thuyet/
-│   │   ├── DE_BAI.md            # Câu hỏi trắc nghiệm lý thuyết
-│   │   └── tra-loi.json         # Điền đáp án của bạn (A, B, C, D)
-│   └── thuc-hanh/
-│       ├── index.js             # Code làm bài thực hành
-│       └── test/index.test.js   # Bộ test kiểm tra code
+│   ├── README.md         # 📖 Đề bài (chứa cả Lý thuyết + Hướng dẫn thực hành)
+│   ├── quiz.json         # ✍️ File điền đáp án trắc nghiệm lý thuyết (A, B, C, D)
+│   ├── index.js          # 💻 File viết code thực hành
+│   └── index.test.js     # 🧪 File test chấm điểm
 │
 ├── week-02/
-│   ├── ly-thuyet/
-│   └── thuc-hanh/
+│   ├── README.md
+│   ├── quiz.json
+│   ├── index.js
+│   └── index.test.js
+│
 └── ... (các tuần tiếp theo)
 ```
 
 ---
 
-## 📌 Hướng dẫn làm và nộp bài
+## 📌 Hướng dẫn làm bài (Dành cho học viên)
 
-### Bước 1: Fork repository này về tài khoản GitHub của bạn
-- Bấm vào nút **Fork** ở góc trên bên phải.
+### Bước 1: Fork & Clone repository
+1. Bấm nút **Fork** ở góc trên bên phải để tạo bản sao về GitHub cá nhân của bạn.
+2. Clone về máy:
+   ```bash
+   git clone https://github.com/your-username/github-classroom-auto.git
+   cd github-classroom-auto
+   ```
 
-### Bước 2: Clone về máy
+### Bước 2: Làm bài tập
+Vào thư mục của tuần cần làm (ví dụ: `assignments/week-01`):
+1. **Lý thuyết**: Đọc đề trong `README.md`, mở file **`quiz.json`** và điền đáp án `"A"`, `"B"`, `"C"` hoặc `"D"`.
+2. **Thực hành**: Mở file **`index.js`** và hoàn thành các hàm theo yêu cầu.
+
+### Bước 3: Chạy thử bài test trên máy
+Gõ lệnh tắt để kiểm tra bài làm trước khi nộp:
 ```bash
-git clone https://github.com/your-username/github-classroom-auto.git
-cd github-classroom-auto
+# Test riêng tuần 1:
+npm run w1
+
+# Test riêng tuần 2:
+npm run w2
+
+# Test toàn bộ các tuần:
+npm test
 ```
 
-### Bước 3: Làm bài tập
-1. **Lý thuyết**: Đọc file `assignments/week-XX/ly-thuyet/DE_BAI.md` và điền đáp án vào `tra-loi.json`.
-2. **Thực hành**: Mở file `assignments/week-XX/thuc-hanh/index.js` và hoàn thành các hàm.
-
-### Bước 4: Chạy test kiểm tra trên máy
-```bash
-# Chạy test kiểm tra code thực hành
-node --test assignments/week-01/thuc-hanh/test/*.test.js
-```
-
-### Bước 5: Nộp bài bằng Pull Request (PR)
-1. Commit và push code lên GitHub cá nhân của bạn:
+### Bước 4: Nộp bài bằng Pull Request (PR)
+1. Commit và push code lên GitHub của bạn:
    ```bash
    git add .
    git commit -m "Nộp bài Tuần 01"
@@ -56,5 +66,5 @@ node --test assignments/week-01/thuc-hanh/test/*.test.js
 
 ### 🎉 Kết quả:
 - Bot GitHub Actions sẽ tự động chấm cả **Lý thuyết** lẫn **Thực hành**.
-- Điểm số sẽ được **ghi thẳng vào đúng hàng của Tuần đó và cột của Bạn** trên Bảng Điểm Google Sheet!
-- Bot tự động phản hồi kết quả chi tiết ngay dưới Pull Request của bạn.
+- Điểm số tự động nhảy vào đúng dòng của Tuần đó và cột của Bạn trên [Bảng Điểm Google Sheet](https://docs.google.com/spreadsheets/d/1-oSqRicyEM3NKcq5mvrwalWFJukSv_F0BxTx5wBqG5c/edit?gid=2081490865#gid=2081490865).
+- Bot sẽ để lại bình luận chi tiết điểm số ngay dưới Pull Request của bạn!

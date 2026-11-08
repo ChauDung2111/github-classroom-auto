@@ -1,10 +1,11 @@
 {
-  "name": "github-classroom-auto",
+  "name": "backend-nodejs-assignments",
   "version": "1.0.0",
-  "description": "Bài tập tự động chấm điểm và đồng bộ Google Sheet",
-  "main": "index.js",
+  "description": "Kho bài tập thực hành Backend Node.js - Tự động chấm điểm",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test assignments/**/index.test.js",
+    "w1": "node --test assignments/week-01/index.test.js",
+    "w2": "node --test assignments/week-02/index.test.js"
   },
   "keywords": [],
   "author": "",

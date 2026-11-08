@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """
 Script chấm điểm tự động đa bài tập (Lý thuyết + Thực hành)
-và cập nhật vào Bảng Điểm:
-- Mỗi TUẦN là 1 HÀNG (Dòng 2: Tuần 01, Dòng 3: Tuần 02...)
-- Các CỘT là TÊN THÀNH VIÊN (Username (LT), Username (TH))
+Hỗ trợ cấu trúc phẳng:
+  assignments/week-XX/
+  ├── README.md
+  ├── quiz.json
+  ├── index.js
+  └── index.test.js
 """
 
 import os
@@ -18,8 +21,12 @@ def get_vietnam_time():
     return datetime.now(tz_vn).strftime("%d/%m/%Y %H:%M:%S")
 
 def grade_theory(week_folder, week_name):
-    """Chấm điểm bài tập lý thuyết dựa vào file tra-loi.json và key đáp án"""
-    answer_file = os.path.join(week_folder, "ly-thuyet", "tra-loi.json")
+    """Chấm điểm bài tập lý thuyết dựa vào file quiz.json và key đáp án"""
+    # Hỗ trợ cả quiz.json mới và tra-loi.json cũ
+    answer_file = os.path.join(week_folder, "quiz.json")
+    if not os.path.exists(answer_file):
+        answer_file = os.path.join(week_folder, "ly-thuyet", "tra-loi.json")
+
     key_file = os.path.join(".github", "keys", f"{week_name}.json")
 
     if not os.path.exists(answer_file) or not os.path.exists(key_file):
@@ -54,7 +61,13 @@ def grade_theory(week_folder, week_name):
 
 def grade_practice(week_folder):
     """Chấm điểm bài tập thực hành bằng node --test"""
-    test_files = glob.glob(os.path.join(week_folder, "thuc-hanh", "test", "*.test.js"))
+    # Hỗ trợ index.test.js phẳng hoặc thư mục test/ cũ
+    test_file = os.path.join(week_folder, "index.test.js")
+    if os.path.exists(test_file):
+        test_files = [test_file]
+    else:
+        test_files = glob.glob(os.path.join(week_folder, "**", "*.test.js"), recursive=True)
+
     if not test_files:
         return None, "Không có file test"
 

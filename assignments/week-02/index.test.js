@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { sumAll, getCity, mergeConfig } = require('../index');
+const { sumAll, getCity, mergeConfig } = require('./index');
 
 test('1. sumAll() phải tính đúng tổng mọi tham số', () => {
   assert.strictEqual(sumAll(1, 2, 3, 4), 10);

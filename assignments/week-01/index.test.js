@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { square, formatUserInfo, filterGreaterThan } = require('../index');
+const { square, formatUserInfo, filterGreaterThan } = require('./index');
 
 test('1. square() phải tính đúng bình phương của một số', () => {
   assert.strictEqual(square(4), 16);
