@@ -1,0 +1,98 @@
+name: Chấm bài tự động & Cập nhật Google Sheet
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches: [main, master]
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write # Để bot comment điểm vào Pull Request
+
+jobs:
+  grade:
+    name: Chấm điểm bài làm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout mã nguồn bài làm
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      # -----------------------------------------------------------
+      # BƯỚC 1: Cài đặt Node.js & Chạy Test
+      # -----------------------------------------------------------
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Chạy bài test (node --test)
+        id: test_step
+        continue-on-error: true
+        run: |
+          npm test
+          if [ $? -eq 0 ]; then
+            echo "SCORE=100/100" >> $GITHUB_ENV
+            echo "STATUS=Passed (Đạt 100%)" >> $GITHUB_ENV
+          else
+            echo "SCORE=0/100" >> $GITHUB_ENV
+            echo "STATUS=Failed (Chưa đạt)" >> $GITHUB_ENV
+          fi
+
+      # -----------------------------------------------------------
+      # BƯỚC 2: Cập nhật kết quả vào Google Sheet
+      # -----------------------------------------------------------
+      - name: Set up Python
+        if: always()
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cài đặt thư viện Google Sheets
+        if: always()
+        run: pip install gspread google-auth
+
+      - name: Đồng bộ điểm vào Google Sheet
+        if: always()
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          STUDENT_USERNAME: ${{ github.event.pull_request.user.login || github.actor }}
+          SCORE: ${{ env.SCORE }}
+          STATUS: ${{ env.STATUS }}
+          COMMIT_URL: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}
+          SPREADSHEET_ID: "1-oSqRicyEM3NKcq5mvrwalWFJukSv_F0BxTx5wBqG5c"
+          SHEET_NAME: "bang diem"
+        run: python .github/scripts/update_sheet.py
+
+      # -----------------------------------------------------------
+      # BƯỚC 3: Bot tự động bình luận điểm vào Pull Request
+      # (Chỉ chạy khi học sinh nộp bằng Pull Request)
+      # -----------------------------------------------------------
+      - name: Phản hồi kết quả vào Pull Request
+        if: always() && github.event.pull_request != null
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const score = process.env.SCORE || '0/100';
+            const status = process.env.STATUS || 'Chưa đạt';
+            const user = context.payload.pull_request.user.login;
+            const body = `### 🤖 Kết quả chấm bài tự động\n\n` +
+                         `- **Học viên**: @${user}\n` +
+                         `- **Điểm số**: \`${score}\`\n` +
+                         `- **Trạng thái**: ${status}\n` +
+                         `- **Bảng điểm**: Đã cập nhật lên Google Sheet.\n\n` +
+                         `*(Mẹo: Nếu chưa đạt 100%, bạn chỉ cần sửa code ở máy rồi push lại, hệ thống sẽ tự chấm lại ngay!)*`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+        env:
+          SCORE: ${{ env.SCORE }}
+          STATUS: ${{ env.STATUS }}

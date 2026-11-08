@@ -1,0 +1,12 @@
+{
+  "name": "github-classroom-auto",
+  "version": "1.0.0",
+  "description": "Bài tập tự động chấm điểm và đồng bộ Google Sheet",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
