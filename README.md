@@ -1,43 +1,60 @@
-# 🚀 Bài Tập: JavaScript ES6+ Nền Tảng
+# 🚀 Lộ Trình Backend Node.js - Hệ Thống Chấm Điểm Tự Động
 
-Chào mừng bạn đến với bài tập thực hành JavaScript! Hệ thống này được tích hợp **chấm điểm tự động và cập nhật trực tiếp lên Google Sheet**.
+Chào mừng các bạn đến với kho lưu trữ bài tập thực hành theo lộ trình Backend Node.js! Hệ thống được tích hợp **chấm điểm tự động và cập nhật trực tiếp lên Google Sheet theo từng tuần**.
 
 ---
 
-## 📌 Hướng dẫn nộp bài (Dành cho học viên)
+## 📂 Cấu trúc bài tập
 
-### Bước 1: Fork repository này về tài khoản cá nhân
-- Nhìn lên góc trên bên phải trang này và bấm vào nút **Fork**.
-- Chọn tài khoản GitHub của bạn để tạo bản sao.
+```text
+assignments/
+├── week-01/
+│   ├── ly-thuyet/
+│   │   ├── DE_BAI.md            # Câu hỏi trắc nghiệm lý thuyết
+│   │   └── tra-loi.json         # Điền đáp án của bạn (A, B, C, D)
+│   └── thuc-hanh/
+│       ├── index.js             # Code làm bài thực hành
+│       └── test/index.test.js   # Bộ test kiểm tra code
+│
+├── week-02/
+│   ├── ly-thuyet/
+│   └── thuc-hanh/
+└── ... (các tuần tiếp theo)
+```
 
-### Bước 2: Clone về máy và làm bài
+---
+
+## 📌 Hướng dẫn làm và nộp bài
+
+### Bước 1: Fork repository này về tài khoản GitHub của bạn
+- Bấm vào nút **Fork** ở góc trên bên phải.
+
+### Bước 2: Clone về máy
 ```bash
-# Thay 'your-username' bằng username GitHub của bạn
 git clone https://github.com/your-username/github-classroom-auto.git
 cd github-classroom-auto
 ```
 
 ### Bước 3: Làm bài tập
-- Mở file `index.js` và hoàn thành 3 hàm được yêu cầu.
+1. **Lý thuyết**: Đọc file `assignments/week-XX/ly-thuyet/DE_BAI.md` và điền đáp án vào `tra-loi.json`.
+2. **Thực hành**: Mở file `assignments/week-XX/thuc-hanh/index.js` và hoàn thành các hàm.
 
-### Bước 4: Chạy thử bài test trên máy
-Bạn có thể tự kiểm tra xem code của mình đã đúng chưa bằng lệnh:
+### Bước 4: Chạy test kiểm tra trên máy
 ```bash
-npm test
+# Chạy test kiểm tra code thực hành
+node --test assignments/week-01/thuc-hanh/test/*.test.js
 ```
-- Nếu tất cả các test đều tích xanh `✔ pass`: Xin chúc mừng, bạn đã đạt 100/100 điểm!
 
 ### Bước 5: Nộp bài bằng Pull Request (PR)
-1. Commit và push code lên GitHub của bạn:
+1. Commit và push code lên GitHub cá nhân của bạn:
    ```bash
-   git add index.js
-   git commit -m "Hoàn thành bài tập"
+   git add .
+   git commit -m "Nộp bài Tuần 01"
    git push origin main
    ```
-2. Mở trình duyệt, vào repo Fork của bạn trên GitHub.
-3. Bấm nút **Contribute** > **Open pull request** > Bấm **Create pull request**.
+2. Vào GitHub repo của bạn, bấm **Contribute > Open pull request** > Bấm **Create pull request**.
 
 ### 🎉 Kết quả:
-- GitHub Actions sẽ tự động chạy chấm điểm.
-- Bot sẽ để lại bình luận nhận xét điểm số ngay dưới Pull Request của bạn.
-- Điểm số và thời gian nộp của bạn sẽ tự động được ghi nhận vào Bảng Điểm chung của lớp!
+- Bot GitHub Actions sẽ tự động chấm cả **Lý thuyết** lẫn **Thực hành**.
+- Điểm số sẽ được **ghi thẳng vào đúng hàng của Tuần đó và cột của Bạn** trên Bảng Điểm Google Sheet!
+- Bot tự động phản hồi kết quả chi tiết ngay dưới Pull Request của bạn.
