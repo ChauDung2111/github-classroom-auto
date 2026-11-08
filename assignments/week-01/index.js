@@ -9,8 +9,7 @@
  * @returns {number}
  */
 const square = (x) => {
-  // TODO: Viết code vào đây
-  return x * x;
+  // TODO: Học viên viết code ở đây
 };
 
 /**
@@ -22,8 +21,7 @@ const square = (x) => {
  * @returns {string}
  */
 const formatUserInfo = (name, age, job) => {
-  // TODO: Viết code vào đây
-  return `Xin chào, tôi là ${name}, ${age} tuổi, làm nghề ${job}.`;
+  // TODO: Học viên viết code ở đây
 };
 
 /**
@@ -34,8 +32,7 @@ const formatUserInfo = (name, age, job) => {
  * @returns {number[]}
  */
 const filterGreaterThan = (numbers, threshold) => {
-  // TODO: Viết code vào đây
-  return numbers.filter((num) => num > threshold);
+  // TODO: Học viên viết code ở đây
 };
 
 module.exports = {

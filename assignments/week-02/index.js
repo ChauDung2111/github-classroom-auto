@@ -9,8 +9,7 @@
  * @returns {number}
  */
 const sumAll = (...numbers) => {
-  // TODO: Viết code ở đây
-  return numbers.reduce((total, n) => total + n, 0);
+  // TODO: Học viên viết code ở đây
 };
 
 /**
@@ -20,8 +19,7 @@ const sumAll = (...numbers) => {
  * @returns {string}
  */
 const getCity = (user) => {
-  // TODO: Viết code ở đây
-  return user?.address?.city ?? 'Chưa xác định';
+  // TODO: Học viên viết code ở đây
 };
 
 /**
@@ -31,8 +29,7 @@ const getCity = (user) => {
  * @returns {object}
  */
 const mergeConfig = (obj1, obj2) => {
-  // TODO: Viết code ở đây
-  return { ...obj1, ...obj2 };
+  // TODO: Học viên viết code ở đây
 };
 
 module.exports = {
