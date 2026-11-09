@@ -70,7 +70,7 @@ def grade_theory(week_folder, week_name):
             correct_count += 1
 
     if not has_any_answer:
-        return None, "Chưa làm lý thuyết"
+        return 0, f"0/{total_questions} câu đúng (Chưa làm lý thuyết)"
 
     score = round((correct_count / total_questions) * 100)
     return score, f"{correct_count}/{total_questions} câu đúng ({score}/100)"
