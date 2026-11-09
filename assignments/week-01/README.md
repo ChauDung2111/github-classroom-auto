@@ -280,13 +280,77 @@ calculate();
 
 ---
 
-## 💻 PHẦN 2: BÀI TẬP THỰC HÀNH
-Mở file **`index.js`** trong thư mục này và hoàn thành 3 hàm:
-1. `square(x)`: Tính bình phương của số `x`.
-2. `formatUserInfo(name, age, job)`: Trả về chuỗi `"Xin chào, tôi là [name], [age] tuổi, làm nghề [job]."`.
-3. `filterGreaterThan(numbers, threshold)`: Lọc ra các số lớn hơn `threshold`.
+## 💻 PHẦN 2: BÀI TẬP THỰC HÀNH NÂNG CAO (CHUYÊN SÂU ES6+)
 
-👉 **Chạy kiểm tra cú pháp trên máy**:
+Mở file **`index.js`** trong thư mục này và hoàn thành 3 bài toán kiến trúc thực tế:
+
+---
+
+### 🔥 Bài 1: Tagged Template Literal XSS Sanitizer (`html` & `raw`)
+Xây dựng một template tag function `html` để tự động hóa việc lọc các ký tự nguy hiểm nhằm chống tấn công XSS (tương tự cơ chế của thư viện `lit-html` / `htmx`):
+- **Escape ký tự**: Mọi giá trị truyền vào `${val}` nếu là chuỗi phải tự động thay thế:
+  - `&` $\to$ `&amp;`
+  - `<` $\to$ `&lt;`
+  - `>` $\to$ `&gt;`
+  - `"` $\to$ `&quot;`
+  - `'` $\to$ `&#39;`
+- **Hàm `raw(content)`**: Nếu giá trị được bọc bằng hàm `raw(val)`, template tag sẽ **bỏ qua việc escape** và render nguyên bản HTML đó.
+- **Xử lý đặc biệt**:
+  - Nếu giá trị là mảng (Array): Tự động escape từng phần tử và nối lại thành chuỗi.
+  - Nếu giá trị là `null` hoặc `undefined`: Chuyển thành chuỗi rỗng `""`.
+  - Các kiểu dữ liệu số (`number`), boolean: Chuyển thành chuỗi bình thường.
+
+*Ví dụ:*
+```javascript
+const name = "<script>bad()</script>";
+const badge = raw("<b>VIP</b>");
+html`<div>User: ${name} - ${badge}</div>`;
+// => "<div>User: &lt;script&gt;bad()&lt;/script&gt; - <b>VIP</b></div>"
+```
+
+---
+
+### 🔥 Bài 2: Private Bank Vault (`createSecureBank`)
+Vận dụng **Block Scope**, **Closures** và **Object Immutability** để thiết kế một module tài khoản ngân hàng bảo mật tuyệt đối, **không dùng class hay `#privateField`**:
+- **Khởi tạo**: `createSecureBank(initialSecret)`:
+  - `initialSecret` phải là chuỗi có độ dài $\ge 6$, nếu không ném `Error`.
+  - Số dư ban đầu `balance = 0`, danh sách lịch sử `history = []`.
+- **Bảo mật tuyệt đối**:
+  - Không được lưu `balance` hay `secretKey` làm thuộc tính trên object trả về (kiểm tra `Object.keys(bank)` không được có các thuộc tính này).
+  - Object trả về phải được đóng băng bằng `Object.freeze()`.
+- **Các phương thức**:
+  1. `deposit(amount)`: `amount` phải là số dương $> 0$ (ngược lại ném `TypeError`). Cộng dồn số dư, ghi nhận `{ type: 'deposit', amount, timestamp }` vào lịch sử và trả về balance mới.
+  2. `withdraw(amount, key)`: Yêu cầu đúng `key` (sai ném `Error("Unauthorized")`). `amount` phải là số dương (sai ném `TypeError`). Không được rút quá số dư (vượt quá ném `Error("Insufficient funds")`). Trừ số dư, ghi nhận `{ type: 'withdraw', amount, timestamp }` vào lịch sử và trả về balance mới.
+  3. `getBalance(key)`: Kiểm tra `key` (sai ném `Error("Unauthorized")`), trả về số dư.
+  4. `getHistory(key)`: Kiểm tra `key` (sai ném `Error("Unauthorized")`), trả về **bản sao** của lịch sử (sửa mảng trả về không làm thay đổi lịch sử bên trong).
+  5. `changeKey(oldKey, newKey)`: Cung cấp đúng `oldKey` (sai ném `Error("Unauthorized")`). `newKey` phải là chuỗi có độ dài $\ge 6$ (sai ném `Error("Invalid key")`). Đổi key thành công trả về `true`.
+
+---
+
+### 🔥 Bài 3: Smart Pipeline với Context Preservation (`createPipeline`)
+Xây dựng hàm tạo Data Pipeline theo phong cách Functional Programming kết hợp quản lý ngữ cảnh `this`:
+- **Đầu vào**: `createPipeline(...fns)` nhận danh sách các hàm xử lý từ trái qua phải.
+  - Nếu bất kỳ phần tử nào trong `...fns` không phải là hàm (`typeof !== 'function'`), ném ngay `TypeError("Pipeline element must be a function")`.
+- **Đầu ra**: Trả về một hàm thực thi `pipeline(initialValue)`.
+  - Kết quả của hàm trước được làm đầu vào cho hàm sau.
+  - Nếu pipeline rỗng (không truyền hàm nào), trả về chính `initialValue`.
+- **Bảo tồn ngữ cảnh `this` (Điểm nâng cao)**:
+  - Hàm pipeline trả về phải hỗ trợ gọi qua `.call(context, initialValue)` hoặc `.apply(context, [initialValue])`.
+  - Toàn bộ các regular function bên trong pipeline phải nhận đúng đối tượng `this` được truyền vào từ bên ngoài!
+
+*Ví dụ:*
+```javascript
+const ctx = { taxRate: 0.1 };
+const calculateTotal = createPipeline(
+  x => x + 100,
+  function(total) { return total * (1 + this.taxRate); }
+);
+calculateTotal.call(ctx, 400); // (400 + 100) * 1.1 = 550
+```
+
+---
+
+👉 **Kiểm tra cú pháp tại máy trước khi nộp**:
 ```bash
 npm run w1
 ```
