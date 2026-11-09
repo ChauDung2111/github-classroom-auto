@@ -280,73 +280,77 @@ calculate();
 
 ---
 
-## 💻 PHẦN 2: BÀI TẬP THỰC HÀNH NÂNG CAO (CHUYÊN SÂU ES6+)
+## 💻 PHẦN 2: BÀI TẬP THỰC HÀNH NÂNG CAO (100% KIẾN THỨC TUẦN 01)
 
-Mở file **`index.js`** trong thư mục này và hoàn thành 3 bài toán kiến trúc thực tế:
-
----
-
-### 🔥 Bài 1: Tagged Template Literal XSS Sanitizer (`html` & `raw`)
-Xây dựng một template tag function `html` để tự động hóa việc lọc các ký tự nguy hiểm nhằm chống tấn công XSS (tương tự cơ chế của thư viện `lit-html` / `htmx`):
-- **Escape ký tự**: Mọi giá trị truyền vào `${val}` nếu là chuỗi phải tự động thay thế:
-  - `&` $\to$ `&amp;`
-  - `<` $\to$ `&lt;`
-  - `>` $\to$ `&gt;`
-  - `"` $\to$ `&quot;`
-  - `'` $\to$ `&#39;`
-- **Hàm `raw(content)`**: Nếu giá trị được bọc bằng hàm `raw(val)`, template tag sẽ **bỏ qua việc escape** và render nguyên bản HTML đó.
-- **Xử lý đặc biệt**:
-  - Nếu giá trị là mảng (Array): Tự động escape từng phần tử và nối lại thành chuỗi.
-  - Nếu giá trị là `null` hoặc `undefined`: Chuyển thành chuỗi rỗng `""`.
-  - Các kiểu dữ liệu số (`number`), boolean: Chuyển thành chuỗi bình thường.
-
-*Ví dụ:*
-```javascript
-const name = "<script>bad()</script>";
-const badge = raw("<b>VIP</b>");
-html`<div>User: ${name} - ${badge}</div>`;
-// => "<div>User: &lt;script&gt;bad()&lt;/script&gt; - <b>VIP</b></div>"
-```
+Mở file **`index.js`** trong thư mục này và hoàn thành 3 bài toán chuyên sâu khảo sát trực tiếp 5 chủ đề cốt lõi của Tuần 1 (`let/const/var`, `Scope`, `Hoisting/TDZ`, `Arrow Functions`, `Template Literals`):
 
 ---
 
-### 🔥 Bài 2: Private Bank Vault (`createSecureBank`)
-Vận dụng **Block Scope**, **Closures** và **Object Immutability** để thiết kế một module tài khoản ngân hàng bảo mật tuyệt đối, **không dùng class hay `#privateField`**:
-- **Khởi tạo**: `createSecureBank(initialSecret)`:
-  - `initialSecret` phải là chuỗi có độ dài $\ge 6$, nếu không ném `Error`.
-  - Số dư ban đầu `balance = 0`, danh sách lịch sử `history = []`.
-- **Bảo mật tuyệt đối**:
-  - Không được lưu `balance` hay `secretKey` làm thuộc tính trên object trả về (kiểm tra `Object.keys(bank)` không được có các thuộc tính này).
-  - Object trả về phải được đóng băng bằng `Object.freeze()`.
-- **Các phương thức**:
-  1. `deposit(amount)`: `amount` phải là số dương $> 0$ (ngược lại ném `TypeError`). Cộng dồn số dư, ghi nhận `{ type: 'deposit', amount, timestamp }` vào lịch sử và trả về balance mới.
-  2. `withdraw(amount, key)`: Yêu cầu đúng `key` (sai ném `Error("Unauthorized")`). `amount` phải là số dương (sai ném `TypeError`). Không được rút quá số dư (vượt quá ném `Error("Insufficient funds")`). Trừ số dư, ghi nhận `{ type: 'withdraw', amount, timestamp }` vào lịch sử và trả về balance mới.
-  3. `getBalance(key)`: Kiểm tra `key` (sai ném `Error("Unauthorized")`), trả về số dư.
-  4. `getHistory(key)`: Kiểm tra `key` (sai ném `Error("Unauthorized")`), trả về **bản sao** của lịch sử (sửa mảng trả về không làm thay đổi lịch sử bên trong).
-  5. `changeKey(oldKey, newKey)`: Cung cấp đúng `oldKey` (sai ném `Error("Unauthorized")`). `newKey` phải là chuỗi có độ dài $\ge 6$ (sai ném `Error("Invalid key")`). Đổi key thành công trả về `true`.
+### 🔥 Bài 1: Arrow Functions, Lexical `this` & Bẫy Scope Vòng Lặp
+Bao gồm 2 hàm khảo sát sự khác biệt giữa Regular Function và Arrow Function cùng bẫy closure kinh điển trong vòng lặp:
+1. `createExecutionContext(ownerName)`:
+   - Trả về đối tượng context có phương thức `createHandler(actionName)`.
+   - `createHandler` PHẢI trả về một **Arrow Function**.
+   - Khi thực thi, handler trả về template literal: `[${actionName}] performed by ${this.ownerName}`.
+   - **Bản chất kiểm tra**:
+     - Do tính chất **Lexical `this`**, dù hàm handler có bị gán sang biến rời rạc và gọi không kèm object (`const fn = ctx.createHandler('run'); fn()`), nó vẫn giữ nguyên tham chiếu đến `this.ownerName` của context ban đầu.
+     - Arrow function không có `[[Construct]]` và không có thuộc tính `prototype`: Nếu người dùng gọi `new handler()`, JavaScript runtime phải ném ra lỗi `TypeError`.
+2. `createBatchHandlers(count, prefix)`:
+   - Nhận vào số lượng `count` và chuỗi `prefix`.
+   - Trả về mảng gồm `count` hàm độc lập. Hàm thứ `i` (từ `0` đến `count - 1`) khi được gọi trả về chuỗi template literal: `${prefix}-${i}`.
+   - **Bẫy kiểm tra**: Bạn PHẢI áp dụng đúng cơ chế **Block Scope (`let`)** trong vòng lặp. Nếu dùng `var`, biến `i` sẽ bị hoisting lên function scope khiến mọi handler khi gọi đều trả về giá trị cuối cùng `${prefix}-${count}`!
 
 ---
 
-### 🔥 Bài 3: Smart Pipeline với Context Preservation (`createPipeline`)
-Xây dựng hàm tạo Data Pipeline theo phong cách Functional Programming kết hợp quản lý ngữ cảnh `this`:
-- **Đầu vào**: `createPipeline(...fns)` nhận danh sách các hàm xử lý từ trái qua phải.
-  - Nếu bất kỳ phần tử nào trong `...fns` không phải là hàm (`typeof !== 'function'`), ném ngay `TypeError("Pipeline element must be a function")`.
-- **Đầu ra**: Trả về một hàm thực thi `pipeline(initialValue)`.
-  - Kết quả của hàm trước được làm đầu vào cho hàm sau.
-  - Nếu pipeline rỗng (không truyền hàm nào), trả về chính `initialValue`.
-- **Bảo tồn ngữ cảnh `this` (Điểm nâng cao)**:
-  - Hàm pipeline trả về phải hỗ trợ gọi qua `.call(context, initialValue)` hoặc `.apply(context, [initialValue])`.
-  - Toàn bộ các regular function bên trong pipeline phải nhận đúng đối tượng `this` được truyền vào từ bên ngoài!
+### 🔥 Bài 2: Template Literals & Tagged Templates Chuyên Sâu
+Xây dựng 2 Tagged Template functions vận dụng tối đa sức mạnh của ES6 Template Strings:
+1. `highlight(strings, ...values)`:
+   - Một Tagged Template function tự động định dạng và bọc các biểu thức nội suy `${...}`:
+     - Nếu `value` là `undefined` hoặc `null`: chuyển đổi thành chuỗi rỗng `""`.
+     - Nếu `value` là số (`number`), logic (`boolean`) hoặc chuỗi (`string`): bọc giá trị trong cặp thẻ `<mark>${value}</mark>`.
+     - Ghép xen kẽ các chuỗi tĩnh `strings[i]` và giá trị nội suy đã được định dạng.
+   - *Ví dụ:*
+     ```javascript
+     highlight`User: ${"Alice"}, Score: ${100}, Note: ${null}`
+     // => "User: <mark>Alice</mark>, Score: <mark>100</mark>, Note: "
+     ```
+2. `multilineFormat(strings, ...values)`:
+   - Xử lý các template literals nhiều dòng (multiline templates) thường gặp khi viết SQL query, HTML template, markdown trong Node.js:
+     - Bước 1: Ghép các chuỗi tĩnh và giá trị nội suy thành chuỗi đầy đủ.
+     - Bước 2: Tách chuỗi theo từng dòng (`\n`).
+     - Bước 3: Bỏ qua các dòng trống hoàn toàn (hoặc dòng chỉ toàn khoảng trắng) ở đầu và ở cuối chuỗi.
+     - Bước 4: Trim khoảng trắng thừa ở cả hai đầu của mỗi dòng còn lại.
+     - Bước 5: Nối lại thành một chuỗi duy nhất bằng ký tự xuống dòng `\n`.
 
-*Ví dụ:*
-```javascript
-const ctx = { taxRate: 0.1 };
-const calculateTotal = createPipeline(
-  x => x + 100,
-  function(total) { return total * (1 + this.taxRate); }
-);
-calculateTotal.call(ctx, 400); // (400 + 100) * 1.1 = 550
-```
+---
+
+### 🔥 Bài 3: Bộ Mô Phỏng Scope Chain, Hoisting, TDZ & `const` Immutability
+Xây dựng hàm `createScopeRegistry(parentScope = null)` mô phỏng chính xác thuật toán quản lý biến và phạm vi của JavaScript Engine trong ES6:
+- **`declare(name, kind)`**:
+  - `kind` phải là `"var"`, `"let"`, hoặc `"const"` (nếu không ném `TypeError("Invalid declaration kind")`).
+  - **No Re-declaration Trap**: Nếu biến `name` đã tồn tại trong cùng một scope và ít nhất một trong hai lần khai báo dùng `let` hoặc `const` $\to$ Ném ngay `TypeError("Identifier '<name>' has already been declared")`. (Chỉ cho phép khai báo lại nếu cả hai đều là `var`).
+  - **Hoisting & TDZ**:
+    - `var`: Được hoisted ngay với giá trị khởi tạo ban đầu là `undefined`.
+    - `let`/`const`: Nằm trong vùng chết tạm thời (TDZ - Temporal Dead Zone / `UNINITIALIZED`).
+- **`initialize(name, value)`**:
+  - Đưa biến thoát khỏi TDZ và gán giá trị đầu tiên.
+  - Nếu biến chưa từng được `declare` trong scope hiện tại $\to$ Ném `ReferenceError("'<name>' is not declared")`.
+  - Nếu biến đã được khởi tạo trước đó rồi $\to$ Ném `Error("Variable already initialized")`.
+  - Nếu là `"const"`: Gán giá trị; nếu `value` là object hoặc array thì đóng băng nông bằng `Object.freeze(value)`.
+- **`assign(name, value)`**:
+  - Gán lại giá trị cho biến theo **Scope Chain** (tìm từ scope hiện tại lên `parentScope`).
+  - Nếu không tìm thấy ở bất cứ scope nào $\to$ Ném `ReferenceError("'<name>' is not defined")`.
+  - Nếu tìm thấy biến nhưng biến đang trong TDZ $\to$ Ném `ReferenceError("Cannot access '<name>' before initialization")`.
+  - Nếu biến có kiểu `"const"` $\to$ Ném `TypeError("Assignment to constant variable")`.
+  - Nếu là `let` hoặc `var` $\to$ Cập nhật giá trị mới trên đúng scope tìm thấy.
+- **`get(name)`**:
+  - Đọc giá trị biến theo **Scope Chain** (tìm từ scope hiện tại lên `parentScope`).
+  - Nếu không tìm thấy $\to$ Ném `ReferenceError("'<name>' is not defined")`.
+  - Nếu tìm thấy biến nhưng đang trong TDZ $\to$ Ném `ReferenceError("Cannot access '<name>' before initialization")`.
+  - Trả về giá trị của biến.
+- **`createChildScope()`**:
+  - Tạo một scope con mới có `parentScope` trỏ về scope hiện tại.
+  - Hỗ trợ **Variable Shadowing**: Child scope có thể `declare` biến trùng tên với cha mà không bị báo lỗi trùng lặp; `get`/`assign` ở child scope sẽ ưu tiên biến ở child scope.
 
 ---
 

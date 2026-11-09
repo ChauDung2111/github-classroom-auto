@@ -1,100 +1,134 @@
-// ============================================================================
-// BÀI TẬP THỰC HÀNH NÂNG CAO: TUẦN 01
-// Chủ đề: Scope, Closure Encapsulation, Tagged Template Literals, Lexical this
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// BÀI 1: Tagged Template Literal XSS Sanitizer (html & raw)
-// ----------------------------------------------------------------------------
 /**
- * Đánh dấu một chuỗi an toàn không cần escape HTML.
- * @param {*} value
- * @returns {object} Object chứa cờ đánh dấu an toàn
+ * ==============================================================================
+ * BÀI TẬP THỰC HÀNH TUẦN 01: JAVASCRIPT ES6+ NỀN TẢNG
+ * Chủ đề: let/const/var, Scope, Hoisting, Arrow Functions, Template Literals
+ * ==============================================================================
+ * 
+ * HƯỚNG DẪN:
+ * 1. Đọc kỹ yêu cầu đề bài trong assignments/week-01/README.md.
+ * 2. Cài đặt các hàm bên dưới theo đúng đặc tả kỹ thuật.
+ * 3. Chạy lệnh: `npm test` hoặc `npm run w1` để kiểm tra với bộ test mẫu.
  */
-const raw = (value) => {
-  // TODO: Học viên viết code ở đây
-};
+
+// ==============================================================================
+// BÀI 1: ARROW FUNCTIONS, LEXICAL THIS & BẪY SCOPE VÒNG LẶP
+// ==============================================================================
 
 /**
- * Tagged template function tự động escape các ký tự nguy hiểm trong chuỗi:
- * '&' -> '&amp;', '<' -> '&lt;', '>' -> '&gt;', '"' -> '&quot;', "'" -> '&#39;'
- * - Nếu giá trị được bọc bởi raw(val) -> không escape.
- * - Nếu giá trị là mảng -> xử lý từng phần tử và nối lại thành chuỗi.
- * - Nếu giá trị là null hoặc undefined -> chuyển thành chuỗi rỗng "".
- * - Các kiểu dữ liệu khác (number, boolean...) -> chuyển thành chuỗi bình thường.
+ * Tạo một Execution Context đại diện cho một đối tượng thực thi.
  * 
- * @param {TemplateStringsArray} strings
- * @param  {...any} values
- * @returns {string} Chuỗi HTML an toàn
+ * @param {string} ownerName - Tên của chủ sở hữu context
+ * @returns {object} Đối tượng context chứa các phương thức:
+ *   - createHandler(actionName): Trả về một Arrow Function. Khi gọi hàm này,
+ *     nó phải trả về chuỗi template literal: `[${actionName}] performed by ${this.ownerName}`.
+ *     Đặc biệt: Vì là Arrow Function, dù hàm này có bị tách khỏi object hay gán sang biến
+ *     độc lập, lexical this vẫn luôn tham chiếu đúng đến context được tạo ra.
+ *     Hàm handler này không thể dùng làm constructor với `new` (nếu dùng `new` sẽ ném TypeError).
  */
-const html = (strings, ...values) => {
-  // TODO: Học viên viết code ở đây
-};
+function createExecutionContext(ownerName) {
+  // TODO: Viết code tại đây
+  throw new Error("Chưa cài đặt hàm createExecutionContext");
+}
 
-// ----------------------------------------------------------------------------
-// BÀI 2: Private Bank Vault (Scope, Closure & Immutability)
-// ----------------------------------------------------------------------------
 /**
- * Khởi tạo một tài khoản ngân hàng bảo mật bằng Scope và Closure.
- * Tuyệt đối không lưu secretKey hay balance dưới dạng thuộc tính trên object trả về!
+ * Tạo một mảng gồm `count` hàm xử lý (handlers), giải quyết triệt để bẫy scope vòng lặp.
  * 
- * Yêu cầu:
- * - initialSecret phải là chuỗi có độ dài >= 6 ký tự, nếu không ném Error.
- * - Số dư ban đầu balance = 0, danh sách lịch sử history = [].
- * 
- * Object trả về phải được đóng băng (Object.freeze) và chứa các phương thức:
- * 1. deposit(amount):
- *    - amount phải là số dương > 0, nếu sai ném TypeError.
- *    - Cộng amount vào balance, ghi nhận vào history: { type: 'deposit', amount, timestamp: Date.now() }.
- *    - Trả về balance mới.
- * 2. withdraw(amount, key):
- *    - key không khớp với secretKey hiện tại -> ném Error("Unauthorized").
- *    - amount không phải số dương > 0 -> ném TypeError.
- *    - amount > balance -> ném Error("Insufficient funds").
- *    - Trừ amount khỏi balance, ghi nhận vào history: { type: 'withdraw', amount, timestamp: Date.now() }.
- *    - Trả về balance mới.
- * 3. getBalance(key):
- *    - key sai -> ném Error("Unauthorized").
- *    - key đúng -> trả về balance hiện tại.
- * 4. getHistory(key):
- *    - key sai -> ném Error("Unauthorized").
- *    - key đúng -> trả về BẢN SAO của mảng history (người ngoài sửa mảng này không ảnh hưởng lịch sử gốc).
- * 5. changeKey(oldKey, newKey):
- *    - oldKey sai -> ném Error("Unauthorized").
- *    - newKey không phải chuỗi hoặc độ dài < 6 -> ném Error("Invalid key").
- *    - Cập nhật secretKey thành newKey, trả về true.
- * 
- * @param {string} initialSecret
- * @returns {object} Đối tượng ngân hàng đã được đóng băng (frozen)
+ * @param {number} count - Số lượng handler cần tạo (>= 0)
+ * @param {string} prefix - Chuỗi tiền tố
+ * @returns {Function[]} Mảng gồm `count` hàm. Hàm thứ `i` (từ 0 đến count - 1)
+ *   khi được gọi độc lập không truyền tham số PHẢI trả về chuỗi template literal:
+ *   `${prefix}-${i}`.
+ *   LƯU Ý: Phải sử dụng đúng cơ chế block scope (`let`) hoặc closure để đảm bảo
+ *   mỗi hàm ghi nhớ đúng giá trị `i` của vòng lặp tương ứng, không bị bẫy ghi đè biến.
  */
-const createSecureBank = (initialSecret) => {
-  // TODO: Học viên viết code ở đây
-};
+function createBatchHandlers(count, prefix) {
+  // TODO: Viết code tại đây
+  throw new Error("Chưa cài đặt hàm createBatchHandlers");
+}
 
-// ----------------------------------------------------------------------------
-// BÀI 3: Smart Functional Pipeline with Context Preservation
-// ----------------------------------------------------------------------------
+// ==============================================================================
+// BÀI 2: TEMPLATE LITERALS & TAGGED TEMPLATES CHUYÊN SÂU
+// ==============================================================================
+
 /**
- * Xây dựng hàm tạo pipeline xử lý dữ liệu từ trái qua phải (Left-to-Right).
- * Yêu cầu:
- * 1. Nếu bất kỳ đối số nào truyền vào ...fns không phải là hàm (typeof !== 'function'),
- *    ném ra TypeError("Pipeline element must be a function").
- * 2. Trả về một hàm thực thi pipeline: fn(initialValue).
- * 3. Nếu pipeline rỗng (...fns không có hàm nào) -> trả về chính initialValue.
- * 4. BẢO TỒN NGỮ CẢNH (Context Preservation):
- *    Hàm pipeline trả về phải cho phép gọi với .call(context, val) hoặc .apply(context, [val])
- *    và truyền đúng context `this` đó vào TẤT CẢ các regular functions trong pipeline!
+ * Tagged template function dùng để highlight và định dạng an toàn các giá trị nội suy.
  * 
- * @param  {...Function} fns
- * @returns {Function} Hàm thực thi pipeline
+ * @param {TemplateStringsArray} strings - Mảng các chuỗi tĩnh
+ * @param {...any} values - Các giá trị nội suy ${...}
+ * @returns {string} Chuỗi hoàn chỉnh sau khi ghép các chuỗi tĩnh và giá trị đã xử lý:
+ *   - Nếu value là `undefined` hoặc `null`: thay thế bằng chuỗi rỗng `""`.
+ *   - Nếu value là số, boolean, chuỗi: bọc giá trị đó trong cặp thẻ `<mark>${value}</mark>`.
+ *   - Ghép xen kẽ strings[i] với value[i] theo đúng cơ chế của Tagged Template.
  */
-const createPipeline = (...fns) => {
-  // TODO: Học viên viết code ở đây
-};
+function highlight(strings, ...values) {
+  // TODO: Viết code tại đây
+  throw new Error("Chưa cài đặt hàm highlight");
+}
+
+/**
+ * Tagged template function xử lý template literal nhiều dòng (multiline string).
+ * 
+ * @param {TemplateStringsArray} strings - Mảng các chuỗi tĩnh
+ * @param {...any} values - Các giá trị nội suy
+ * @returns {string} Chuỗi sau khi ghép nối và chuẩn hóa theo quy tắc:
+ *   1. Ghép chuỗi tĩnh và giá trị nội suy như template string thông thường.
+ *   2. Tách chuỗi thành từng dòng (dựa trên ký tự xuống dòng `\n`).
+ *   3. Bỏ qua các dòng trống ở đầu và ở cuối (dòng chỉ chứa khoảng trắng).
+ *   4. Xóa khoảng trắng thừa (trim) ở đầu và cuối của mỗi dòng còn lại.
+ *   5. Nối các dòng lại với nhau bằng một ký tự `\n`.
+ */
+function multilineFormat(strings, ...values) {
+  // TODO: Viết code tại đây
+  throw new Error("Chưa cài đặt hàm multilineFormat");
+}
+
+// ==============================================================================
+// BÀI 3: BỘ MÔ PHỎNG SCOPE CHAIN, HOISTING, TDZ & CONST IMMUTABILITY
+// ==============================================================================
+
+/**
+ * Khởi tạo một Scope Registry mô phỏng chính xác cơ chế Scope Chain, Hoisting,
+ * Temporal Dead Zone (TDZ) và quy tắc khai báo biến let/const/var trong JavaScript ES6+.
+ * 
+ * @param {object|null} [parentScope=null] - Scope cha (nếu có) để tạo Scope Chain
+ * @returns {object} Đối tượng scope chứa các phương thức:
+ *   - declare(name, kind): Khai báo tên biến với từ khóa 'var', 'let' hoặc 'const'.
+ *       + Nếu kind không hợp lệ -> ném TypeError("Invalid declaration kind").
+ *       + Nếu biến đã tồn tại trong scope hiện tại và khai báo lại bằng 'let' hoặc 'const'
+ *         (hoặc biến cũ là 'let'/'const') -> ném TypeError("Identifier '<name>' has already been declared").
+ *       + Nếu kind là 'var': biến được hoisted với giá trị ban đầu là `undefined`.
+ *       + Nếu kind là 'let' hoặc 'const': biến nằm trong vùng TDZ (UNINITIALIZED).
+ * 
+ *   - initialize(name, value): Khởi tạo giá trị đầu tiên cho biến (đưa biến ra khỏi TDZ).
+ *       + Nếu biến chưa từng declare trong scope hiện tại -> ném ReferenceError("'<name>' is not declared").
+ *       + Nếu biến đã qua bước initialize rồi mà gọi lại -> ném Error("Variable already initialized").
+ *       + Nếu biến là 'const': gán giá trị, và nếu value là object/array thì áp dụng `Object.freeze(value)`.
+ * 
+ *   - assign(name, value): Gán lại giá trị cho biến đã khởi tạo theo Scope Chain.
+ *       + Tìm kiếm biến từ scope hiện tại lên parentScope.
+ *       + Nếu không tìm thấy ở bất kỳ scope nào -> ném ReferenceError("'<name>' is not defined").
+ *       + Nếu tìm thấy nhưng biến đang trong TDZ -> ném ReferenceError("Cannot access '<name>' before initialization").
+ *       + Nếu biến có kind là 'const' -> ném TypeError("Assignment to constant variable").
+ *       + Cập nhật giá trị mới cho biến (trên đúng scope mà biến được tìm thấy).
+ * 
+ *   - get(name): Đọc giá trị biến theo Scope Chain.
+ *       + Tìm kiếm biến từ scope hiện tại lên parentScope.
+ *       + Nếu không tìm thấy -> ném ReferenceError("'<name>' is not defined").
+ *       + Nếu tìm thấy nhưng biến đang trong TDZ -> ném ReferenceError("Cannot access '<name>' before initialization").
+ *       + Trả về giá trị của biến.
+ * 
+ *   - createChildScope(): Tạo một scope con mới có parentScope chính là scope hiện tại,
+ *       cho phép Variable Shadowing (khai báo biến trùng tên mà không đụng chạm đến scope cha).
+ */
+function createScopeRegistry(parentScope = null) {
+  // TODO: Viết code tại đây
+  throw new Error("Chưa cài đặt hàm createScopeRegistry");
+}
 
 module.exports = {
-  raw,
-  html,
-  createSecureBank,
-  createPipeline,
+  createExecutionContext,
+  createBatchHandlers,
+  highlight,
+  multilineFormat,
+  createScopeRegistry,
 };
